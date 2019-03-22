@@ -1,18 +1,26 @@
+"""
+Fichier principal qui contient le comportement de l'assistance
+"""
+
 import speech_recognition as sr
 import pyttsx3, os
 from reconnaissance import treat_request, get_appointment_by_date, get_appointment_by_month, insert
 from string_matcher import match_word, match_month, match_number, match_names, match_motif
 from datetime import date, timedelta
-"""from Capteur import sonner"""
+"""from Capteur import sonner""" #cette ligne a été commentée, car si l'Arduino n'est pas branché à l'ordinateur,
+                                 #le programme crash
+
 r = sr.Recognizer()
 m = sr.Microphone()
 
 def say_it(phrase):
+    #Fonction text-to-speech
     engine = pyttsx3.init()
     engine.say(phrase)
     engine.runAndWait()
 
 def initiate (mot_cle1,mot_cle2):
+    #Fonction qui permet de lancer l'assistance vocale en utilisant un mot clé
     text=""
     say_it("Bonjour ! Il faut dire le mot clé "+mot_cle1)
     print("Dites le mot clé")
@@ -36,11 +44,13 @@ def initiate (mot_cle1,mot_cle2):
             print("Could not request results; {0}".format(e))
 
 def said_date(request):
+    #Fonction qui permet de savoir si la requête comporte une date numérique
     if match_number(request):
         return match_number(request)
     return False
 
 def said_month(request):
+    #Fonction qui permet de savoir si la requête comporte un mois
     months_names=["janvier","février","mars","avril","mai","juin","juillet","août","septembre"
             ,"octobre","novembre","décembre"]
     months_nb=[i for i in range(1,13)]
@@ -51,12 +61,15 @@ def said_month(request):
     return False
 
 def said_name(request,names):
+    #Fonction qui permet de savoir si la requête cite un nom (les noms interprétés sont stockés dans la base de données)
     for name in names:
         if name in match_word(request,80):
             return name
     return False
 
 def appointment (request):
+    #Fonction qui détecte si la requête consiste à demander si on a un rendez-vous pour une date précise et à
+    #retourner une réponse
     today = date.today()
     jour=False
     if "aujourd'hui" in request :
@@ -104,6 +117,7 @@ def appointment (request):
         return "Pas de rendez-vous"
 
 def add_appointment():
+    #Fonction qui traite l'enregistrement d'un nouveau rendez-vous dans la base de données à partir des commandes vocales
     r = sr.Recognizer()
     m = sr.Microphone()
     print("Ajout d'un nouveau rendez-vous dans la base de donnée. ")
@@ -197,28 +211,38 @@ def add_appointment():
     reponse="Rendez-vous ajouté dans la base de donnée. "+str(appointment_date)+" avec "+name+" , lieu : "+lieu+", pour "+motif+". "
     return reponse
 
+#Début du programme principal
+
+#On attend que le mot clé soit prononcé avant de lancer l'assistance
 initiate("bonjour","Bonjour")
 print("Comment puis-je vous aider?")
 say_it('Comment puis-je vous aider ?')
 
-text=""
+text="" #buffer pour stocker tout ce qu'à dit le client
 while "merci" not in text and "Merci" not in text :
+    #Le mot "merci" permet d'arrêter la session vocale, tant qu'il n'est pas prononcé par l'utilisateur,
+    #on traite tout ce qu'il dit
     with m as source:
+        # On écoute par intervalles de 3 secondes
         audio = r.listen(source, phrase_time_limit=3)
     try:
-        text += r.recognize_google(audio, language="fr-FR")
+        text += r.recognize_google(audio, language="fr-FR") #traitement speech-to-text
         if text:
             print("Vous avez dit : " + text)
             text+=" "
             if "jeu" in text or "jeux" in text or "jouer" in text :
+                #Si l'utilisateur parle de jeu, on lance le jeu de mémoire et on met fin à la session
+                #(on ne veut pas continuer à écouter/traiter pendant que l'utilisateur joue)
                 os.system("MemoryGame.html")
                 text="merci"
             elif "ajout" in text or "nouveau" in text :
-                reponse = add_appointment()
+                #Si l'utilisateur emploie les mots ajout et/ou nouveau, c'est qu'il veut ajouter un nouveau rendez-vous
+                reponse = add_appointment() #traitement de la requête
                 print(reponse)
-                say_it(reponse)
+                say_it(reponse) #output vocal de la réponse
                 text=""
             elif "rendez-vous" in text or "consulter" in text or "voir" in text or "faire" in text or said_date(text) or said_month(text) :
+                #L'utilisateur veut savoir s'il a des rendez-vous pour une date
                 reponse=appointment(text)
                 print(reponse)
                 say_it(reponse)
@@ -226,11 +250,13 @@ while "merci" not in text and "Merci" not in text :
 
 
             else :
-                match=match_word(text,90)
+                #Le cas restant est celui où l'utilisateur cherche un objet personnel
+                match=match_word(text,90) #Petite tolérence qui permet de comprendre un mot de la base de données
+                                          #si l'utilisateur ne l'a pas prononcé correctement
                 if match=="merci":
                     text="merci"
                 if "merci" not in text and "Merci" not in text:
-                    reponse = treat_request(text)
+                    reponse = treat_request(text) #traitement de la requête
                     if reponse :
                         print(reponse)
                         say_it(reponse)
@@ -241,6 +267,8 @@ while "merci" not in text and "Merci" not in text :
                             sonner("maison")"""
                         text=""
                     else :
+                        #Si on a pas de réponse, c'est qu'il y a eu une erreur d'interprétation de ce que l'utilisateur
+                        #a dit, on lui demande de répéter
                         print("Répétez. Vous avez dit : "+text)
                         say_it("Répétez")
                 else :

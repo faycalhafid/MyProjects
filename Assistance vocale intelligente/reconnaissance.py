@@ -2,14 +2,15 @@
 """
 Created on Mon Jan 14 17:21:00 2019
 
-@author: Sonia DNA
+@author: Sonia DNA, Fayçal HAFID, Kaci Islam MAKOUR
+
+Module de traitement des requêtes, mise en lien avec la base de données
 """
 
 import sqlite3
 
-phrase = "où sont mes médicaments?"
-
 def treat_request(phrase):
+    #Permet de traiter une requête concernant les objets personnels
     conn = sqlite3.connect('reconnaissance.sqlite')
     cursor = conn.cursor()
     keyword=False
@@ -54,6 +55,7 @@ def treat_request(phrase):
     return str(reponse1)[2:-3]
 
 def get_names():
+    #Retourne la liste des noms (personnes proches du malade) qui sont dans la base de données
     conn = sqlite3.connect('reconnaissance.sqlite')
     cursor = conn.cursor()
     cursor.execute("""SELECT personne FROM Personnes_rdv""")
@@ -66,6 +68,7 @@ def get_names():
     return res
 
 def get_appointment_by_date(jour):
+    #Retourne la liste des rendez-vous dans la base de données pour la date indiquée
     conn = sqlite3.connect('reconnaissance.sqlite')
     cursor = conn.cursor()
     cursor.execute("""SELECT motif, personne, lieu FROM rendez_vous WHERE date_rdv= '%s' """ % (str(jour)))
@@ -74,6 +77,7 @@ def get_appointment_by_date(jour):
     return rdv
 
 def get_appointment_by_month(month):
+    # Retourne la liste des rendez-vous dans la base de données pour le mois indiqué
     conn = sqlite3.connect('reconnaissance.sqlite')
     cursor = conn.cursor()
     cursor.execute("""SELECT date_rdv FROM rendez_vous""")
@@ -90,6 +94,7 @@ def get_appointment_by_month(month):
     return rdvs
 
 def get_dates_with_month(month,list_of_dates):
+    #Fonction qui met les dates dans le bon format
     dates_to_return=[]
     for date in list_of_dates :
         date=date[0]
@@ -100,13 +105,11 @@ def get_dates_with_month(month,list_of_dates):
     return dates_to_return
 
 def insert(date, mot, pers, li):
+    #Ajout d'un nouveau rendez-vous dans la base de données
     conn = sqlite3.connect('reconnaissance.sqlite')
     cursor = conn.cursor()
     cursor.execute("""INSERT INTO rendez_vous(date_rdv, motif, personne, lieu) VALUES(DATE (?),?,?,?)""",(date,mot,pers,li))
     conn.commit()
     conn.close()
 
-
-from datetime import date, timedelta, datetime
-#datetime.strptime(date.today(),'%Y-%m-%d %H:%M:%S')
 

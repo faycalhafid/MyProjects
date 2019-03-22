@@ -1,3 +1,7 @@
+"""
+Ce fichier traite les ambiguités (fuzzy logic) pour permettre une tolérance de reconnaissance de certains mots
+"""
+
 from reconnaissance import get_names
 possibilities=["bonjour","merci","stop","c'est bon"," au revoir","arrête","téléphone","smartphone","voiture",
                "maison","médicaments","portefeuille","clés"]
@@ -46,6 +50,7 @@ def match_names(name):
         return False
 
 def match_motif(motif):
+    #Pour normaliser les entrées dans la base de données
     poss={"café":"prendre un café",
           "thé":"prendre un thé",
           "consultation":"faire une consultation",
